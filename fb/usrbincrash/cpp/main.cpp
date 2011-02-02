@@ -2,7 +2,7 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include <limits> 
+//#include <limits> 
 #include <algorithm> 
 
 using namespace std;
@@ -137,19 +137,24 @@ bool readInput(const char* fileName, int& maxWeight, vector<Item>& items)
         return false;
     }
 
-    if (!getline(inFile, fileLine).eof())
+    if (getline(inFile, fileLine))
     {
         iss.clear();
         iss.str(fileLine);
         iss >> maxWeight;
     }
 
-    while (!getline(inFile, fileLine).eof())
+    while (getline(inFile, fileLine))
     {
         iss.clear();
+        //cout << "fileLine: " << fileLine << endl;
         iss.str(fileLine);
         iss >> tmpSku >> tmpItem.weight >> tmpItem.cost;
-        items.push_back(tmpItem);
+        // items with zero weight are useless - so skip them
+        if (tmpItem.weight > 0)
+        {
+            items.push_back(tmpItem);
+        }
     }
 
     return true;
@@ -171,7 +176,7 @@ int main(int argc, char *argv[])
 
 #ifdef DEBUG
     cout << "Max weight:\n" << maxWeight << endl;
-    cout << "Unsorted items:\n";
+    cout << "Items:\n";
     for (size_t i = 0; i < items.size(); i++)
     {
         cout << items[i].weight << " " << items[i].cost << endl;
