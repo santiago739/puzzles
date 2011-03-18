@@ -7,7 +7,7 @@ LIBS =
 #LIBS = -pg 
 PUZZLENAME = smallworld
 LDFLAGS = $(LIBDIRS) $(LIBS)
-SOURCES = main2.cpp
+SOURCES = main.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXECUTABLE = $(PUZZLENAME)
 

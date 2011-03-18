@@ -5,53 +5,52 @@
 #include <vector>
 #include <algorithm> 
 
-#include <math.h>
-
 using namespace std;
+
+struct Point
+{
+    int id;
+    double coord[2];
+};
 
 struct KdNode
 {
-    int id;
-    double x;
-    double y;
-    
-    KdNode* parent;
-    KdNode* left;
-    KdNode* right;
+    Point data;
+    KdNode *left;
+    KdNode *right;
 
-    KdNode()
-      : left(NULL), right(NULL) { }
+    KdNode(const Point & item)
+      : data(item), left(NULL), right(NULL) { }
 };
 
-bool sortNodesByX(const KdNode & lhs, const KdNode & rhs) 
+bool sortPointsByX(const Point & lhs, const Point & rhs) 
 {
-	return lhs.x < rhs.x;
+	return lhs.coord[0] < rhs.coord[0];
 }
 
-bool sortNodesByY(const KdNode & lhs, const KdNode & rhs) 
+bool sortPointsByY(const Point & lhs, const Point & rhs) 
 {
-	return lhs.y < rhs.y;
+	return lhs.coord[1] < rhs.coord[1];
 }
 
 class KdTree
 {
-public:    
-    KdTree() 
-      : root(NULL) { }
+public:
+    KdTree() : root(NULL) { }
     
-    void addNode(KdNode n)
+//    void build(vector<Point> & points, size_t nPoints, int depth)
+//    {
+//        if (depth & 1)
+//            sort(points.begin(), points.end(), sortPointsByY);
+//        else
+//            sort(points.begin(), points.end(), sortPointsByX);
+            
+//        size_t nPoints = nPoints >> 1;
+//    }
+
+    void insert(const Point & x)
     {
-        nodes.push_back(n);
-    }
-    
-    vector<KdNode> getNodes() const
-    {
-        return nodes;
-    }
-    
-    void build()
-    {
-        root = build(nodes.begin(), nodes.end());
+        insert(x, root, 0);
     }
     
     void print()
@@ -59,91 +58,95 @@ public:
         print(root, 0);
     }
     
-    KdNode* nearest(KdNode& x)
+    const Point nearest(const Point & x)
     {
-        KdNode* n = x.parent;
+        Point p;
         
-        double d = distance(x, (*n));
+        p = findParent(x, root, 0);
         
-        return n;
+        return p;
     }
-      
-private:
-    KdNode* root;
-    vector<KdNode> nodes;
     
-    KdNode* build(vector<KdNode>::iterator begin, vector<KdNode>::iterator end, 
-                  int depth = 0, KdNode* parent = NULL)
+    const Point findParent(const Point & x, KdNode * & t, int level)
     {
-        if (end - begin == 0)
-        {
-//            cout << "end - begin: " << (end - begin) << endl;
-//            cout << "depth: " << depth << endl;
-//            cout << endl;
-            return NULL;
-        }
+        Point p;
         
-        if (depth % 2)
+        if (x.coord[level] < t->data.coord[level])
         {
-            sort(begin, end, sortNodesByY);
+            if (t->left == NULL)
+                p = x;
+            else 
+                p = findParent(x, t->left, 1 - level);
         }
         else
         {
-            sort(begin, end, sortNodesByX);
+            if (t->right == NULL)
+                p = x;
+            else 
+                p = findParent(x, t->right, 1 - level);
         }
+            
+        return p;
+    }
         
-        cout << "Nodes:\n";
-        for (vector<KdNode>::iterator i = begin; i != end; ++i) 
-        {
-            cout << (*i).id << " " << (*i).x << " " << (*i).y << endl;
-        }
-        
-        int median = (end - begin) / 2;
-        int offset = (begin - nodes.begin()) + median;
-        cout << "end - begin: " << (end - begin) << endl;
-        cout << "median: " << median << endl;
-        cout << "offset: " << offset << endl;
-        cout << "depth: " << depth << endl;
-        cout << "nodes[offset].id: " << nodes[offset].id;
-        cout << " nodes[offset].x: " << nodes[offset].x;
-        cout << " nodes[offset].y: " << nodes[offset].y << endl;
-        cout << endl;
-        
-        nodes[offset].parent = parent;
-        nodes[offset].left = build(begin, begin + median, depth + 1, &nodes[offset]);
-        nodes[offset].right = build(begin + median + 1, end, depth + 1, &nodes[offset]);
-        
-        return &nodes[offset];
+
+private:
+    KdNode *root;
+
+    void insert(const Point & x, KdNode * & t, int level)
+    {
+        if (t == NULL)
+            t = new KdNode(x);
+        else if (x.coord[level] < t->data.coord[level])
+            insert(x, t->left, 1 - level);
+        else
+            insert(x, t->right, 1 - level);
     }
     
-    double distance(KdNode& n1, KdNode& n2)
+    void print(KdNode * t, int level)
     {
-        return sqrt( pow((n2.x - n1.x), 2) + pow((n2.y - n1.y), 2) );
-    }
-    
-    void print(KdNode *n, int level)
-    {
-        if (n == NULL)
+        if (t == NULL)
         {
             return;
         }
         else 
         {
-            cout << showbase << setw((level + 1) * 5) << "[ ID: " << n->id 
-                 << " X: " << n->x << " Y: " << n->y 
+            cout << showbase << setw((level + 1) * 5) << "[ ID: " << t->data.id 
+                 << " X: " << t->data.coord[0] << " Y: " << t->data.coord[1] 
                  << " ] " << endl;
-            print(n->left, level + 1);
-            print(n->right, level + 1);
+            print(t->left, level + 1);
+            print(t->right, level + 1);
+                         
         }
     }
+    
+    
+
+//    void printRange( const vector<Comparable> & low,
+//                     const vector<Comparable> & high,
+//                     KdNode *t, int level ) const
+//    {
+//        if( t != NULL )
+//        {
+//            if( low[ 0 ] <= t->data[ 0 ] && high[ 0 ] >= t->data[ 0 ] && 
+//                low[ 1 ] <= t->data[ 1 ] && high[ 1 ] >= t->data[ 1 ] )
+//                cout << "(" << t->data[ 0 ] << "," 
+//                            << t->data[ 1 ] << ")" << endl;
+
+//            if( low[ level ] <= t->data[ level ] )
+//                printRange( low, high, t->left, 1 - level );
+//            if( high[ level ] >= t->data[ level ] )
+//                printRange( low, high, t->right, 1 - level );
+//        }
+//    }
 };
 
-bool readInput(const char* fileName, KdTree& t)
+bool readInput(const char* fileName, vector<Point>& points)
 {
     ifstream inFile(fileName);
     istringstream iss;
     string fileLine;
-    KdNode tmpNode;
+    Point tmpPoint;
 
     if (!inFile)
     {
@@ -155,8 +158,8 @@ bool readInput(const char* fileName, KdTree& t)
     {
         iss.clear();
         iss.str(fileLine);
-        iss >> tmpNode.id >> tmpNode.x >> tmpNode.y;
-        t.addNode(tmpNode);
+        iss >> tmpPoint.id >> tmpPoint.coord[0] >> tmpPoint.coord[1];
+        points.push_back(tmpPoint);
     }
 
     return true;
@@ -164,56 +167,38 @@ bool readInput(const char* fileName, KdTree& t)
 
 int main(int argc, char *argv[])
 {
-//    vector<KdNode> nodes;
+    vector<Point> points;
     KdTree t;
-    //Point nn;
+    Point nn;
 
-    if (argc != 2 || !readInput(argv[1], t))
+    if (argc != 2 || !readInput(argv[1], points))
     {
         return 1;
     }
 
 #ifdef DEBUG
-//    vector<KdNode> nodes;
-//    cout << "Nodes:\n";
-//    nodes = t.getNodes();
-//    for (size_t i = 0; i < nodes.size(); i++)
-//    {
-//        cout << nodes[i].id << " " << nodes[i].x << " " << nodes[i].y << endl;
-//    }
+    cout << "Points:\n";
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        cout << points[i].id << " " << points[i].coord[0] << " " << points[i].coord[1] << endl;
+    }
 #endif
 
-    t.build();
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        t.insert(points[i]);
+    }
+    cout << "\n\n";
     t.print();
-
-    vector<KdNode> nodes;
-    nodes = t.getNodes();
-
-    
-    KdNode x = nodes[0];
-    KdNode* n = t.nearest(x);
     
     cout << "Nearest points:\n";
-    cout << "point: ID=" << x.id << " X=" << x.x << " Y=" << x.y << endl;
-    cout << "nearest: ID=" << n->id << " X=" << n->x << " Y=" << n->y << endl;
-
-
-
-//    for (size_t i = 0; i < points.size(); i++)
-//    {
-//        t.insert(points[i]);
-//    }
-//    cout << "\n\n";
-//    t.print();
-    
-//    cout << "Nearest points:\n";
-//    for (size_t i = 0; i < points.size(); i++)
-//    {
-//        nn = t.nearest(points[i]);
+    for (size_t i = 0; i < points.size(); i++)
+    {
+        nn = t.nearest(points[i]);
         
-//        cout << points[i].id << " " << points[i].coord[0] << " " << points[i].coord[1] << endl;
-//        cout << "neighbour: " << nn.id << " " << nn.coord[0] << " " << nn.coord[1] << endl;
-//    }
+        cout << points[i].id << " " << points[i].coord[0] << " " << points[i].coord[1] << endl;
+        cout << "neighbour: " << nn.id << " " << nn.coord[0] << " " << nn.coord[1] << endl;
+    }
     
     
     return 0;
