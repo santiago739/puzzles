@@ -3,7 +3,7 @@ CC = g++
 CFLAGS = -g -Wall -Wextra -std=gnu++98 $(INCDIRS) -DDEBUG
 INCDIRS = 
 LIBDIRS = 
-LIBS = 
+LIBS = -lm
 #LIBS = -pg 
 PUZZLENAME = smallworld
 LDFLAGS = $(LIBDIRS) $(LIBS)
