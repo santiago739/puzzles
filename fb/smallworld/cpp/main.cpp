@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <algorithm> 
+#include <limits>
 
 #include <math.h>
 
@@ -17,12 +18,15 @@ struct Point
     double y;
 };
 
+struct Minimum
+{
+    Point point;
+    double distance;
+};
+
 struct KdNode
 {
-//    int depth;
     Point point;
-    
-//    KdNode* parent;
     KdNode* left;
     KdNode* right;
 
@@ -48,19 +52,23 @@ bool sortNodesByY(const KdNode & lhs, const KdNode & rhs)
 class KdTree
 {
 public:
-    KdNode* root;
-    
     KdTree() 
       : root(NULL) { }
     
     void addNode(KdNode n)
     {
         nodes.push_back(n);
+        nodesOriginal.push_back(n);
     }
     
-    vector<KdNode> getNodes() const
+    KdNode* getRoot() const
     {
-        return nodes;
+        return root;
+    }
+    
+    vector<KdNode>& getNodes()
+    {
+        return nodesOriginal;
     }
     
     void build()
@@ -73,26 +81,6 @@ public:
         print(root, 0);
     }
     
-//    KdNode* nearest(KdNode& target)
-//    {
-//        if (root == NULL)
-//        {
-//            return NULL;
-//        }
-        
-//        // find parent node to which target would have been inserted. This is our
-//        // best shot at locating closest point; compute best distance guess so far
-//        KdNode* parent = target.parent;
-        
-//        double smallest = distance(x, (*n));
-//        KdNode better;
-        
-//        min = 
-//        better = nearest((*root), min, x);
-        
-//        return n;
-//    }
-
     Point nearest(KdNode* node, Point& point, Point min, int depth = 0)
     {
         if (node != NULL)
@@ -122,13 +110,76 @@ public:
         }
         return min;
     }
+    
+    double nearestKPoints(KdNode* node, Point& point, unsigned int k, 
+                     vector<Minimum>& min, double kDistance, int depth = 0)
+    {
+        if (node != NULL)
+        {
+            double d;
+            int axis = depth % 2;
+            
+            if (axis == 0)
+                d = point.x - node->point.x;
+            else
+                d = point.y - node->point.y;
+                
+            KdNode* near = (d <= 0) ? node->left : node->right;
+            KdNode* far  = (d <= 0) ? node->right : node->left;
+            
+            kDistance = nearestKPoints(near, point, k, min, kDistance, depth + 1);
+            
+            if ((d * d) < kDistance)
+            {
+                kDistance = nearestKPoints(far, point, k, min, kDistance, depth + 1);
+            }
+            
+            d = distance(point, node->point);
+            
+            if (d < kDistance)
+            {
+                int i, j, m;
+                
+                i = 0;
+                j = min.size();
+                while (i < j)
+                {
+                    m = (i + j) / 2;
+                    if (min[m].distance < d)
+                    {
+                        i = m + 1;
+                    }
+                    else
+                    {
+                        j = m;
+                    }
+                }
+                Minimum tmp;
+                tmp.point = node->point;
+                tmp.distance = d;
+                
+                vector<Minimum>::iterator it;
+                it = min.begin() + i;
+                min.insert(it, tmp);
+                
+                if (min.size() >= k)
+                {
+                    min.resize(k);
+                    kDistance = min[min.size() - 1].distance;
+                }
+            }
+        }
+        return kDistance;
+    }
       
 private:
     
+    KdNode* root;
     vector<KdNode> nodes;
+    vector<KdNode> nodesOriginal;
     
     KdNode* build(vector<KdNode>::iterator begin, vector<KdNode>::iterator end, 
-                  int depth = 0, KdNode* parent = NULL)
+                  int depth = 0)
     {
         if (end - begin == 0)
         {
@@ -144,27 +195,11 @@ private:
             sort(begin, end, sortNodesByX);
         }
         
-//        cout << "Nodes:\n";
-//        for (vector<KdNode>::iterator i = begin; i != end; ++i) 
-//        {
-//            cout << (*i).id << " " << (*i).x << " " << (*i).y << endl;
-//        }
-        
         int median = (end - begin) / 2;
         int offset = (begin - nodes.begin()) + median;
-//        cout << "end - begin: " << (end - begin) << endl;
-//        cout << "median: " << median << endl;
-//        cout << "offset: " << offset << endl;
-//        cout << "depth: " << depth << endl;
-//        cout << "nodes[offset].id: " << nodes[offset].id;
-//        cout << " nodes[offset].x: " << nodes[offset].x;
-//        cout << " nodes[offset].y: " << nodes[offset].y << endl;
-//        cout << endl;
         
-//        nodes[offset].depth = depth;
-//        nodes[offset].parent = parent;
-        nodes[offset].left = build(begin, begin + median, depth + 1, &nodes[offset]);
-        nodes[offset].right = build(begin + median + 1, end, depth + 1, &nodes[offset]);
+        nodes[offset].left = build(begin, begin + median, depth + 1);
+        nodes[offset].right = build(begin + median + 1, end, depth + 1);
         
         return &nodes[offset];
     }
@@ -173,67 +208,6 @@ private:
     {
         return pow((n2.x - n1.x), 2) + pow((n2.y - n1.y), 2);
     }
-    
-//    double distance(KdNode& n1, KdNode& n2)
-//    {
-//        return sqrt( pow((n2.x - n1.x), 2) + pow((n2.y - n1.y), 2) );
-//    }
-    
-//    double distancePerpendicular(KdNode& n1, KdNode& n2)
-//    {
-//        double d;
-        
-//        if (n1.depth % 2)
-//        {
-//            d = n1.x - n2.x;
-//        }
-//        else
-//        {
-//            d = n1.y - n2.y;
-//        }
-        
-//        return fabs(d);
-//    }
-    
-//    KdNode nearest(KdNode& node, double min, KdNode& x)
-//    {
-//        double d, dp, dpt;
-//        KdNode result, pt;
-        
-//        d = distance(x, node);
-//        if (d < min)
-//        {
-//            result = node;
-//            min = d;
-//        }
-//        dp = distancePerpendicular(x, node);
-        
-//        if (dp < min)
-//        {
-//            pt = nearest(node.parent, min, x);
-//            dpt = distance(pt, x);
-//            if (dpt < min)
-//            {
-//                result = pt;
-//                min = dpt;
-//            }
-//        }
-//        else
-//        {
-//            if (node.depth < x.depth)
-//            {
-//                pt = nearest(node.parent, min, x);
-//            }
-//            else
-//            {
-                
-//            }
-            
-            
-//        }
-        
-//        return result;
-//    }
     
     void print(KdNode *n, int level, char side = 'c')
     {
@@ -292,53 +266,31 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-#ifdef DEBUG
-//    vector<KdNode> nodes;
-//    cout << "Nodes:\n";
-//    nodes = t.getNodes();
-//    for (size_t i = 0; i < nodes.size(); i++)
-//    {
-//        cout << nodes[i].id << " " << nodes[i].x << " " << nodes[i].y << endl;
-//    }
-#endif
-
     t.build();
-    t.print();
-    
-    Point s = {0, 6, 5};
-    Point nn = t.nearest(t.root, s, t.root->point, 0);
-    
-    cout << "nearest: ID=" << nn.id << " X=" << nn.x << " Y=" << nn.y << endl;
-
-    //vector<KdNode> nodes;
-    //nodes = t.getNodes();
-
-    
-    //KdNode x = nodes[0];
-//    KdNode* n = t.nearest(x);
-    
-//    cout << "Nearest points:\n";
-//    cout << "point: ID=" << x.id << " X=" << x.x << " Y=" << x.y << endl;
-//    cout << "nearest: ID=" << n->id << " X=" << n->x << " Y=" << n->y << endl;
-
-
-
-//    for (size_t i = 0; i < points.size(); i++)
-//    {
-//        t.insert(points[i]);
-//    }
-//    cout << "\n\n";
 //    t.print();
     
-//    cout << "Nearest points:\n";
-//    for (size_t i = 0; i < points.size(); i++)
-//    {
-//        nn = t.nearest(points[i]);
-        
-//        cout << points[i].id << " " << points[i].coord[0] << " " << points[i].coord[1] << endl;
-//        cout << "neighbour: " << nn.id << " " << nn.coord[0] << " " << nn.coord[1] << endl;
-//    }
+//    Point s = {0, 6, 5};
+//    Point nn = t.nearest(root, s, root->point, 0);
+//    cout << "nearest: ID=" << nn.id << " X=" << nn.x << " Y=" << nn.y << endl;
     
+    KdNode* root = t.getRoot();
+    vector<Minimum> min;
+    vector<KdNode> nodes = t.getNodes();
+    
+    for (size_t i = 0; i < nodes.size(); i++)
+    {
+        min.clear();
+        t.nearestKPoints(root, nodes[i].point, 4, min, numeric_limits<double>::max(), 0);
+        
+        cout << nodes[i].point.id << " ";
+        for (size_t j = 1; j < min.size(); j++)
+        {
+            cout << min[j].point.id;
+            if (j < min.size() - 1)
+                cout << ",";
+        }
+        cout << endl;
+    }
     
     return 0;
 }
