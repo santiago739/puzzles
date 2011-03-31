@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+ini_set('memory_limit', '1024M');
+
+$n = file_get_contents($argv[1]);
+foreach (range(1, $n) as $i) {
+    if ($i % 3 == 0 && $i % 5 == 0) {
+        print "Hop\n";
+    } elseif ($i % 3 == 0) {
+        print "Hoppity\n";
+    } elseif ($i % 5 == 0) {
+        print "Hophop\n";
+    }
+}
