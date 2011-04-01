@@ -2,42 +2,17 @@
 <?php
 ini_set('memory_limit', '1024M');
 
-$graph = array();
-
-$graph[1] = array(2, 5);
-$graph[2] = array(1, 3, 5);
-$graph[3] = array(2, 4);
-$graph[4] = array(3, 5, 6);
-$graph[5] = array(1, 2, 4);
-$graph[6] = array(4);
-
-function bron_kerbosch1($r, $p, $x, &$g, $depth = 0)
+function print_array($arr)
 {
-	for ($i = 0; $i < $depth; $i++) 
-		echo "  ";
-	echo "bron_kerbosch\n";
-	if ((count($p) == 0) && (count($x) == 0))
+	echo "{ ";
+	foreach ($arr as $k=>$v) 
 	{
-//		echo "Maximal clique:";
-//		print_r($r);
-		return; 
+		echo $v . " "; 
 	}
-	foreach ($p as $v) 
-	{
-		bron_kerbosch1
-		(
-			array_merge($r, array($v)), 
-			array_intersect($p, $g[$v]),
-			array_intersect($x, $g[$v]),
-			$g, 
-			$depth + 1
-		);
-		$p = array_diff($p, array($v));
-		$x = array_merge($x, array($v)); 
-	}
+	echo "}";
 }
 
-function get_pivot($s, $graph)
+function get_pivot1($s, &$graph)
 {
 	$i = 0; $n = 0;
 	
@@ -61,21 +36,41 @@ function get_pivot2($s)
 	return $u;
 }
 
-function print_array($arr)
+function bron_kerbosch1($r, $p, $x, &$graph, &$cliques)
 {
-	echo "{ ";
-	foreach ($arr as $k=>$v) 
+	if ((count($p) == 0) && (count($x) == 0))
 	{
-		echo $v . " "; 
+//		echo "Maximal clique:";
+//		print_r($r);
+        if (count($r) > 2)
+        {
+            $cliques[] = $r;
+        }
+		return; 
 	}
-	echo "}";
+	foreach ($p as $v) 
+	{
+		bron_kerbosch1
+		(
+			array_merge($r, array($v)), 
+			array_intersect($p, $graph[$v]),
+			array_intersect($x, $graph[$v]),
+			$graph, 
+			$cliques
+		);
+		$p = array_diff($p, array($v));
+		$x = array_merge($x, array($v)); 
+	}
 }
 
-function bron_kerbosch2($r, $p, $x, &$graph, &$cliques, $ptype, $depth = 0)
+function bron_kerbosch2($r, $p, $x, &$graph, &$cliques)
 {
-//	for ($i = 0; $i < $depth; $i++) 
-//		echo "  ";
-//	echo "bron_kerbosch2\n";
+/*
+	for ($i = 0; $i < $depth; $i++) 
+		echo "  ";
+	echo "bron_kerbosch2\n";
+*/
+    
 //	echo "bron_kerbosch2(";
 //	print_array($r);
 //	echo ", ";
@@ -95,16 +90,11 @@ function bron_kerbosch2($r, $p, $x, &$graph, &$cliques, $ptype, $depth = 0)
 		return;
 	}
 	
-	if ($ptype == 1)
-		$u = get_pivot(array_merge($p, $x), $graph);
-	else
-		$u = get_pivot2(array_merge($p, $x));
+    $u = get_pivot1(array_merge($p, $x), $graph);
 		
 //	echo "u: $u\n";
 	if (empty($u))
-	{
 		return;
-	}
 	
 	$pv = array_diff($p, $graph[$u]);
 	
@@ -116,9 +106,7 @@ function bron_kerbosch2($r, $p, $x, &$graph, &$cliques, $ptype, $depth = 0)
 			array_intersect($p, $graph[$v]),
 			array_intersect($x, $graph[$v]),
 			$graph,
-            $cliques,
-			$ptype,
-			$depth + 1
+            $cliques
 		);
 		$p = array_diff($p, array($v));
 		$x = array_merge($x, array($v)); 
@@ -127,18 +115,47 @@ function bron_kerbosch2($r, $p, $x, &$graph, &$cliques, $ptype, $depth = 0)
 
 $graph = array();
 $cliques = array();
-$f = file($argv[1]);
+$handle = fopen($argv[1], "r");
 
-foreach ($f as $line)
+while (($line = fgets($handle)) !== false) 
 {
-    $line = str_replace("\n", "", $line);
+    $line = trim($line);
     $vals = explode("\t", $line);
-    //var_dump($vals);
-    $graph[$vals[1]][] = $vals[2];
+/*
+    var_dump($vals);
+*/
+    if ($vals[1] != $vals[2]) 
+    {
+        if (!array_key_exists($vals[1], $graph))
+        {
+            $graph[$vals[1]] = array();
+        }
+        
+        if (!in_array($vals[2], $graph[$vals[1]]))
+        {
+            $graph[$vals[1]][] = $vals[2];
+        }
+    }
 }
+fclose($handle);
+
+/*
+foreach ($graph as $vertex => $neighbours)
+{
+    foreach ($neighbours as $key => $neighbour)
+    {
+        if (!in_array($vertex, $graph[$neighbour]))
+        {
+            
+        }
+    }
+}
+*/
+
 //var_dump($graph);
 
-bron_kerbosch2(array(), array_keys($graph), array(), $graph, $cliques, 1);
+//bron_kerbosch1(array(), array_keys($graph), array(), $graph, $cliques);
+bron_kerbosch2(array(), array_keys($graph), array(), $graph, $cliques);
 
 foreach ($cliques as &$clique)
 {
@@ -147,13 +164,3 @@ foreach ($cliques as &$clique)
 }
 //var_dump($cliques);
 
-/*
-echo "bron_kerbosch1: \n";
-bron_kerbosch1(array(), array_keys($graph), array(), $graph);
-
-echo "\nbron_kerbosch2, 1: \n";
-bron_kerbosch2(array(), array_keys($graph), array(), $graph, 1);
-
-echo "\nbron_kerbosch2, 2: \n";
-bron_kerbosch2(array(), array_keys($graph), array(), $graph, 2);
-*/
