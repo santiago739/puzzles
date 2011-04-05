@@ -65,20 +65,6 @@ function bron_kerbosch1($r, $p, $x, &$graph, &$cliques)
 
 function bron_kerbosch2($r, $p, $x, &$graph, &$cliques)
 {
-/*
-	for ($i = 0; $i < $depth; $i++) 
-		echo "  ";
-	echo "bron_kerbosch2\n";
-*/
-    
-//	echo "bron_kerbosch2(";
-//	print_array($r);
-//	echo ", ";
-//	print_array($p);
-//	echo ", ";
-//	print_array($x);
-//	echo ")\n";
-	
 	if ((count($p) == 0) && (count($x) == 0))
 	{
 		//echo "Maximal clique:";
@@ -117,6 +103,7 @@ $graph = array();
 $cliques = array();
 $handle = fopen($argv[1], "r");
 
+// read file and build graph (adjacent list))
 while (($line = fgets($handle)) !== false) 
 {
     $line = trim($line);
@@ -139,18 +126,19 @@ while (($line = fgets($handle)) !== false)
 }
 fclose($handle);
 
-/*
 foreach ($graph as $vertex => $neighbours)
 {
+    $neighbours_new = array();
     foreach ($neighbours as $key => $neighbour)
     {
-        if (!in_array($vertex, $graph[$neighbour]))
+        if (in_array($vertex, $graph[$neighbour]))
         {
-            
+            $neighbours_new[] = $neighbour;
         }
     }
+    $graph[$vertex] = $neighbours_new;
 }
-*/
+
 
 //var_dump($graph);
 
