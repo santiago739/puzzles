@@ -3,155 +3,178 @@
 #include <iostream>
 #include <list>
 #include <set>
-//#include <algorithm> 
-
+#include <vector>
+#include <iterator>
+#include <map>
 
 using namespace std;
 
-list<set<int> > kerbosh(int **&a,int SIZE)
+struct Vertex;
+
+typedef map<string, Vertex*, less<string> > vmap;
+
+struct Edge
 {
-   set<int> M,G,K,P;
-   list<set<int> > REZULT;
-   for (int i=0; i<SIZE;i++)
-   {
-       K.insert(i);
-   }
-   int v,Count=0,cnt=0;
-   int Stack1[100];
-   std::set<int> Stack2[100];
-   std::set<int>::iterator theIterator;
-   theIterator=K.begin();
-   while ((K.size()!=0)||(M.size()!=0))
-   {
-       if (K.size()!=0)
-       {
-           theIterator=K.begin();
-           v=*theIterator;
-           Stack2[++Count]=M;
-           Stack2[++Count]=K;
-           Stack2[++Count]=P;
-           Stack1[++cnt]=v;
-           M.insert(v);
-           for (int i=0;i<SIZE;i++)
-           {
-               if (a[v][i])
-               {
-                   theIterator=K.find(i);
-                   if (theIterator!=K.end())
-                   {
-                       K.erase(theIterator);
-                   }
-                   theIterator=P.find(i);
-                   if (theIterator!=P.end())
-                   {
-                       P.erase(theIterator);
-                   }
-               }
-           }
-           theIterator=K.find(v);
-           if (theIterator!=K.end())
-           {
-               K.erase(theIterator);
-           }
-       }
-       else
-       {
-           if (P.size()==0)
-           {
-               REZULT.push_back(M);
-           }
-           v=Stack1[cnt--];
-           P=Stack2[Count--];
-           K=Stack2[Count--];
-           M=Stack2[Count--];
-           theIterator=K.find(v);
-           if (theIterator!=K.end())
-           {
-               K.erase(theIterator);
-           }
-           P.insert(v);
-       }
-   }
-   return  REZULT;
+    Vertex* dest;   // Second vertex in edge
+
+    Edge( Vertex* d = 0 )
+        : dest( d ) { }
+};
+
+struct Vertex
+{
+    string        name;    // Vertex name
+    vector<Edge>  adj;     // Adjacent vertices (and costs)
+
+    Vertex( const string& nm ) 
+        : name( nm ) { }
+};
+
+class Graph
+{
+public:
+    Graph( ) { }
+    ~Graph( );
+    
+    void addEdge( const string& sourceName, const string& destName );
+    void printGraph( );
+    const vmap& getVertexMap( );
+
+private:
+    vmap vertexMap;
+    
+    Vertex* getVertex( const string& vertexName );
+    
+    // Copy semantics are disabled; these make no sense.
+    Graph( const Graph & rhs ) { }
+    const Graph & operator= ( const Graph & rhs )
+      { return *this; }
+
+};
+
+const vmap& Graph::getVertexMap( )
+{
+    return vertexMap;
 }
 
-
-//bool readInput(const char* fileName, KdTree& t)
-//{
-//    ifstream inFile(fileName);
-//    istringstream iss;
-//    string fileLine;
-//    Point tmp;
-
-//    if (!inFile)
-//    {
-//        cerr << "Cannot open " << fileName << endl;
-//        return false;
-//    }
-
-//    while (getline(inFile, fileLine))
-//    {
-//        iss.clear();
-//        iss.str(fileLine);
-//        iss >> tmp.id >> tmp.x >> tmp.y;
-//        KdNode node(tmp);
-//        t.addNode(node);
-//    }
-
-//    return true;
-//}
-
-int main(int argc, char *argv[])
+void Graph::addEdge( const string& sourceName, const string& destName )
 {
-    const int gSize = 2;
-//    int graph[gSize][gSize] = {{1, 1},
-//                               {1, 1}
-//                              };
+    Vertex* v = getVertex( sourceName );
+    Vertex* w = getVertex( destName );
+    v->adj.push_back( Edge( w ) );
+}
 
-    int **g(new int*[gSize]);
-    for (int row = 0; row != gSize; ++row)
+Vertex* Graph::getVertex( const string& vertexName )
+{
+    vmap::iterator itr = vertexMap.find( vertexName );
+
+    if ( itr == vertexMap.end( ) )
     {
-        g[row] = new int[gSize];
+        Vertex* newv = new Vertex( vertexName );
+        vertexMap[ vertexName ] = newv;
+        return newv;
     }
-    
-//    for (int row = 0; row != gSize; ++row)
-//    {
-//        for (int col = 0; col != gSize; ++col)
-//        {
-//            g[row][col] = 1;
-//        }
-//    }
-    
-//    g[0][0] = 0;    g[0][1] = 0;    g[0][2] = 0;
-//    g[1][0] = 1;    g[1][1] = 0;    g[1][2] = 0;
-//    g[2][0] = 0;    g[2][1] = 0;    g[2][2] = 0;
 
-    g[0][0] = 0;    g[0][1] = 0;    
-    g[1][0] = 1;    g[1][1] = 0;    
-    
-    list<set<int> > cliques;
-    list<set<int> >::iterator itList;
-    set<int>::iterator itSet;
-    
-    cliques = kerbosh(g, gSize);
-    
-    cout << "cliques contains: " << endl;
-    for (itList = cliques.begin(); itList != cliques.end(); itList++)
+    return ( *itr ).second;
+}
+
+void Graph::printGraph( )
+{
+    cout << "=== Graph ===" << "\n";
+    for ( vmap::iterator itr = vertexMap.begin( ); itr != vertexMap.end( ); ++itr )
     {
-        for (itSet = (*itList).begin(); itSet != (*itList).end(); itSet++)
+        cout << "Vertex: " << ( *itr ).first << " ";
+        cout << "Edges: ";
+        vector<Edge>::const_iterator adjItr = ( *itr ).second->adj.begin();
+        
+        for ( adjItr = ( *itr ).second->adj.begin(); adjItr != ( *itr ).second->adj.end(); ++adjItr )
         {
-            cout << " " << *itSet;
+            cout << ( *adjItr ).dest->name << " ";
         }
-        cout << endl;
+        cout << "\n";
+    }
+}
+
+Graph::~Graph( )
+{
+    for ( vmap::iterator itr = vertexMap.begin( ); itr != vertexMap.end( ); ++itr )
+    {
+        delete( *itr ).second;
+    }
+}
+
+vector<string> & split( const string& s, char delim, vector<string>& elems )
+{
+    stringstream ss( s );
+    string item;
+
+    while ( getline( ss, item, delim ) )
+    {
+        elems.push_back( item );
     }
 
-    cout << endl;
+    return elems;
+}
+
+vector<string> split( const string& s, char delim )
+{
+    vector<string> elems;
+    return split( s, delim, elems );
+}
+
+bool readInput( const char* fileName, Graph& g )
+{
+    ifstream inFile( fileName );
+    string fileLine;
+    vector<string> tokens;
+
+    if ( !inFile )
+    {
+        cerr << "Cannot open " << fileName << endl;
+        return false;
+    }
+
+    while ( getline( inFile, fileLine ) )
+    {
+        tokens = split( fileLine, '\t' );
+
+        cout << tokens[1] << " " << tokens[2] << "\n";
+        g.addEdge( tokens[1], tokens[2] );
+    } 
     
-                              
-//    if (argc != 2 || !readInput(argv[1], t))
-//    {
-//        return 1;
-//    }
-    
+    return true;
+}
+
+void bronKerbosch1( vmap r, vmap p, vmap x )
+{
+    if ( p.size() == 0 && x.size() == 0 )
+    {
+        cout << "Maximal clique" << "\n";
+        return;
+    }
+    for ( vmap::iterator itr = p.begin( ); itr != p.end( ); ++itr )
+    {
+        r.insert( *itr );
+        
+//         bronKerbosch1( r );
+    }
+}
+
+int main( int argc, char* argv[] )
+{
+    Graph g;
+    vmap r, p, x;
+
+    if ( argc != 2 || !readInput( argv[1], g ) )
+    {
+        return 1;
+    }
+
+    g.printGraph( );
+
+    p = g.getVertexMap( );
+
+    bronKerbosch1( r, p, x );
+
     return 0;
 }
