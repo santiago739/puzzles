@@ -377,8 +377,8 @@ void bronKerboschTwo( vset setR, vset setP, vset setX, vector<vset>& cliques, in
     {
         timers[0].start();
         cliques.push_back(setR);
-        return;
         timers[0].finish();
+        return;
     }
     
     timers[1].start();

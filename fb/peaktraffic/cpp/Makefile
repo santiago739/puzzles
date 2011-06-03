@@ -1,13 +1,13 @@
 CC = g++
-#CFLAGS = -g -Wall -Wextra -std=gnu++98 -O2 $(INCDIRS) 
-CFLAGS = -g -Wall -Wextra -std=gnu++98 $(INCDIRS) -DDEBUG
+CFLAGS = -g -Wall -Wextra -std=gnu++98 -O2 $(INCDIRS) 
+#CFLAGS = -g -Wall -Wextra -std=gnu++98 $(INCDIRS) -DDEBUG
 INCDIRS = 
 LIBDIRS = 
 LIBS = -lm
 #LIBS = -pg 
 PUZZLENAME = peaktraffic
 LDFLAGS = $(LIBDIRS) $(LIBS)
-SOURCES = main.cpp
+SOURCES = $(PUZZLENAME).cpp graph.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXECUTABLE = $(PUZZLENAME)
 
