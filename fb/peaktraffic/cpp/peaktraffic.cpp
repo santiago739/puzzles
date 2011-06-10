@@ -1,15 +1,94 @@
+#include <fstream>
+#include <sstream>
+
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
 
+
 #include "graph.h"
 
-bool readInput( const char *fname, Graph& g )
+void printSet( const vset& s )
+{
+    vset::iterator i, j;
+    
+    cout << "{ ";
+    for ( i = s.begin( ); i != s.end( ); ++i )
+    {
+        cout << ( *i )->name;
+        j = i;
+        ++j;
+        if ( j != s.end( ) )
+        {
+            cout << ", ";
+        }
+    }
+    cout << " }";
+}
+
+vector<string> & split( const string& s, char delim, vector<string>& elems )
+{
+    stringstream ss( s );
+    string item;
+    
+    while ( getline( ss, item, delim ) )
+    {
+        elems.push_back( item );
+    }
+
+    return elems;
+}
+
+vector<string> split( const string& s, char delim )
+{
+    vector<string> elems;
+    return split( s, delim, elems );
+}
+
+bool readInput( const char* fileName, Graph& g )
+{
+    ifstream inFile( fileName );
+    string fileLine;
+    vector<string> tokens;
+
+    if ( !inFile )
+    {
+        cerr << "Cannot open " << fileName << endl;
+        return false;
+    }
+
+    while ( getline( inFile, fileLine ) )
+    {
+        fileLine.erase( remove( fileLine.begin(), fileLine.end(), '\n'), fileLine.end() );
+        fileLine.erase( remove( fileLine.begin(), fileLine.end(), '\r'), fileLine.end() );
+        
+        tokens = split( fileLine, '\t' );
+
+//         cout << tokens[1] << " " << tokens[2] << "\n";
+        if ( tokens[1] == tokens[2] )
+        {
+            continue;
+        }
+//         cout << "\"" << tokens[1] << "\"" << " " << "\"" << tokens[2] << "\"" << endl;
+//         cout << tokens[1].size() << " " << tokens[2].size() << endl;
+//         cout << "s1: ";
+//         printAsciiString(tokens[1]);
+//         cout << " s2: ";
+//         printAsciiString(tokens[2]);
+//         cout << endl;
+        
+        g.addEdge( tokens[1], tokens[2] );
+    } 
+    
+    return true;
+}
+
+bool _readInput( const char *fname, Graph& g )
 {
     FILE *fp;
     int r;
-    //char date[255], node1[80], node2[80];
     char tokens[3][80];
     string node1, node2;
     
@@ -59,33 +138,69 @@ Vertex* getPivotTwo( const vset& setP )
     return pivot;
 }
 
+bool compVSet ( const Vertex* lhs, const Vertex* rhs )
+{
+    return lhs->name < rhs->name ;
+}
 
-void bronKerboschTwo( vset setR, vset setP, vset setX, vector<vset>& cliques, int level = 0 )
+string getSetAsString( vset& s )
+{
+    vset::iterator k;
+    string result;
+    vector<string> v;
+    vector<string>::iterator i, j;
+    
+//    sort( s.begin( ), s.end( ), compVSet );
+
+    for ( k = s.begin( ); k != s.end( ); ++k )
+    {
+        v.push_back( ( *k )->name );
+    }
+    sort( v.begin( ), v.end( ) );
+    
+    for ( i = v.begin( ); i != v.end( ); ++i )
+    {
+        result += *i;
+        
+//        std::cout << ( *i )->name;
+        j = i; ++j;
+        
+        if ( j != v.end( ) )
+        {
+            result += ", ";
+        }
+    }
+    return result;
+}
+
+void bronKerboschTwo( vset setR, vset setP, vset setX, vector<string>& cliques, int level = 0 )
 {
     vset setNewR, setNewP, setNewX, setTmpP, neighboursV, neighboursU;
     vset::iterator k;
     Vertex* pivot;
     
     
-//     int j = level;
-//     while ( j > 0 )
-//     {
-//         cout << "  ";
-//         j--;
-//     }
-//     cout << "=== bronKerboschTwo( ";
-//     printSet( setR );
-//     cout << ", ";
-//     printSet( setP );
-//     cout << ", ";
-//     printSet( setX );
-//     cout << " ) ===" << "\n";
+//    int j = level;
+//    while ( j > 0 )
+//    {
+//        cout << "  ";
+//        j--;
+//    }
+//    cout << "=== bronKerboschTwo( ";
+//    printSet( setR );
+//    cout << ", ";
+//    printSet( setP );
+//    cout << ", ";
+//    printSet( setX );
+//    cout << " ) ===" << "\n";
+
+//    printSet( setP );
     
-//     printSet( setP );
-    
-    if ( setP.size() == 0 && setX.size() == 0 )
+    if ( ( setP.size() == 0 ) && ( setX.size() == 0 ) && ( setR.size() > 2 ) )
     {
-        cliques.push_back(setR);
+//        cliques.push_back(setR);
+        cliques.push_back( getSetAsString( setR ) );
+
         return;
     }
     
@@ -157,7 +272,8 @@ int main( int argc, char *argv[] )
 {
     Graph g;
     vset setR, setP, setX;
-    vector<vset> cliques;
+//    vector<vset> cliques;
+    vector<string> cliques;
 
 
     if ( argc != 2 ) 
@@ -176,6 +292,13 @@ int main( int argc, char *argv[] )
     setP = g.getVertexSet();
     
     bronKerboschTwo( setR, setP, setX, cliques );
+    
+    sort( cliques.begin( ), cliques.end( ) );
+    for ( vector<string>::iterator i = cliques.begin( ); i != cliques.end( ); i++ )
+    {
+        //printSet( *i );
+        cout << *i <<  "\n";
+    }
     
     return 0;
 }

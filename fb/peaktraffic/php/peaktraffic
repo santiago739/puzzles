@@ -2,6 +2,10 @@
 <?php
 ini_set('memory_limit', '1024M');
 
+$graph = array();
+$cliques = array();
+$handle = fopen($argv[1], "r");
+
 function print_array($arr)
 {
 	echo "{ ";
@@ -12,8 +16,9 @@ function print_array($arr)
 	echo "}";
 }
 
-function get_pivot1($s, &$graph)
+function get_pivot1($s)
 {
+    global $graph;
 	$i = 0; $n = 0;
 	
 	foreach ($s as $k=>$v) 
@@ -36,13 +41,26 @@ function get_pivot2($s)
 	return $u;
 }
 
-function bron_kerbosch1($r, $p, $x, &$graph, &$cliques)
+function bron_kerbosch1($r, $p, $x, &$graph, &$cliques, $depth = 0)
 {
+    for ($i = 0; $i < $depth; $i++) 
+		echo "  ";
+//	echo "bron_kerbosch2\n";
+
+    
+	echo "bron_kerbosch1(";
+	print_array($r);
+	echo ", ";
+	print_array($p);
+	echo ", ";
+	print_array($x);
+	echo ")\n";
+    
 	if ((count($p) == 0) && (count($x) == 0))
 	{
 //		echo "Maximal clique:";
 //		print_r($r);
-        if (count($r) > 2)
+//         if (count($r) > 2)
         {
             $cliques[] = $r;
         }
@@ -56,15 +74,27 @@ function bron_kerbosch1($r, $p, $x, &$graph, &$cliques)
 			array_intersect($p, $graph[$v]),
 			array_intersect($x, $graph[$v]),
 			$graph, 
-			$cliques
+			$cliques,
+            $depth + 1
 		);
 		$p = array_diff($p, array($v));
 		$x = array_merge($x, array($v)); 
 	}
 }
 
-function bron_kerbosch2($r, $p, $x, &$graph, &$cliques)
+function bron_kerbosch2($r, $p, $x, $depth = 0)
 {
+    global $graph, $cliques;
+    
+// 	for ($i = 0; $i < $depth; $i++) echo "  ";
+// 	echo "bron_kerbosch2(";
+// 	print_array($r);
+// 	echo ", ";
+// 	print_array($p);
+// 	echo ", ";
+// 	print_array($x);
+// 	echo ")\n";
+	
 	if ((count($p) == 0) && (count($x) == 0))
 	{
 		//echo "Maximal clique:";
@@ -76,32 +106,104 @@ function bron_kerbosch2($r, $p, $x, &$graph, &$cliques)
 		return;
 	}
 	
-    $u = get_pivot1(array_merge($p, $x), $graph);
+    $u = get_pivot1(array_merge($p, $x));
+//     $u = get_pivot2(array_merge($p, $x), $graph);
 		
 //	echo "u: $u\n";
-	if (empty($u))
-		return;
+//	if (empty($u))
+//		return;
 	
 	$pv = array_diff($p, $graph[$u]);
 	
 	foreach ($pv as $v) 
 	{
+        if (!in_array($v, $r))
+        {
+            array_push($r, $v);
+        }
+        
 		bron_kerbosch2
 		(
-			array_merge($r, array($v)), 
+// 			array_merge($r, array($v)), 
+            $r,
 			array_intersect($p, $graph[$v]),
 			array_intersect($x, $graph[$v]),
-			$graph,
-            $cliques
+			$depth + 1
 		);
-		$p = array_diff($p, array($v));
+        array_pop($r);
+ 		$p = array_diff($p, array($v));
+//        if (($ind = array_search($v, $p)) !== false)
+//        {
+//            unset($p[$ind]);
+//        }
 		$x = array_merge($x, array($v)); 
+//		if (!in_array($v, $x))
+//        {
+//            $x[] = $v;
+//        }
+		
 	}
 }
 
-$graph = array();
-$cliques = array();
-$handle = fopen($argv[1], "r");
+function get_minimum_degree(&$graph)
+{
+    reset($graph);
+    $selected = key($graph);
+    $min = count($graph[$selected]);
+    
+    foreach ($graph as $vertex => $neighbours)
+    {
+        $total_neighbours = count($neighbours);
+        if ($total_neighbours < $min)
+        {
+            $min = $total_neighbours;
+            $selected = $vertex;
+        }
+    }
+    //$result = $graph[$selected];
+    //unset($graph[$selected]);
+    return $selected;
+}
+
+function bron_kerbosch3()
+{
+    global $graph, $cliques;
+
+    $graph_new = array();
+    while(count($graph) > 0)
+    {
+        $vertex = get_minimum_degree(&$graph);
+        $graph_new[$vertex] = $graph[$vertex];
+        unset($graph[$vertex]);
+    }
+    $graph = $graph_new;
+//     var_dump($graph);
+    
+    
+    $p = array_keys($graph);
+    $r = array();
+    $x = array();
+    
+    foreach ($graph as $k => $v) 
+    {
+        bron_kerbosch2
+        (
+            array_merge($r, array($k)), 
+            array_intersect($p, $graph[$k]),
+            array_intersect($x, $graph[$k])
+//             $graph,
+//             $cliques
+        );
+        $p = array_diff($p, array($k));
+        $x = array_merge($x, array($k)); 
+    }
+}
+
+function microtime_float()
+{
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);
+}
 
 // read file and build graph (adjacent list))
 while (($line = fgets($handle)) !== false) 
@@ -138,17 +240,33 @@ foreach ($graph as $vertex => $neighbours)
     }
     $graph[$vertex] = $neighbours_new;
 }
+// var_dump($graph);
 
 
-//var_dump($graph);
+$time_start = microtime_float();
+// bron_kerbosch1(array(), array_keys($graph), array(), $graph, $cliques);
+bron_kerbosch2(array(), array_keys($graph), array());
+//bron_kerbosch3($graph, $cliques);
+$time_finish = microtime_float();
+$time = $time_finish - $time_start;
+file_put_contents("php://stderr", "bron_kerbosch did $time seconds\n");
 
-//bron_kerbosch1(array(), array_keys($graph), array(), $graph, $cliques);
-bron_kerbosch2(array(), array_keys($graph), array(), $graph, $cliques);
+// var_dump($cliques);
 
-foreach ($cliques as &$clique)
+$result = array();
+foreach ($cliques as $clique)
 {
     sort($clique, SORT_STRING);
-    echo implode(", ", $clique) . "\n";
+//     echo implode(", ", $clique) . "\n";
+    $clique = implode(", ", $clique);
+    $result[] = $clique;
 }
-//var_dump($cliques);
+sort($result, SORT_STRING);
+$result= array_unique($result, SORT_STRING);
+// var_dump($result);
+
+foreach ($result as $clique)
+{
+     echo $clique . "\n";
+}
 

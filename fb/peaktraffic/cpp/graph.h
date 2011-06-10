@@ -8,18 +8,31 @@
 using namespace std;
 
 struct Vertex;
+//struct VertexSetComp;
 
 typedef map<string, Vertex*, less<string> > vmap;
+//typedef set<Vertex*, VertexSetComp> vset;
 typedef set<Vertex*> vset;
+
 
 struct Vertex
 {
     string  name;
     vset    neighbours;
+//    set<Vertex*, VertexSetComp>    neighbours;
 
     Vertex( const string& nm ) 
         : name( nm ) { }
 };
+
+struct VertexSetComp 
+{
+    bool operator() ( const Vertex* lhs, const Vertex* rhs ) const
+    {
+        return lhs->name < rhs->name ;
+    }
+};
+
 
 
 class Graph

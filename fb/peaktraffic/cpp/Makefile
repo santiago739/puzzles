@@ -1,6 +1,6 @@
 CC = g++
-CFLAGS = -g -Wall -Wextra -std=gnu++98 -O2 $(INCDIRS) 
-#CFLAGS = -g -Wall -Wextra -std=gnu++98 $(INCDIRS) -DDEBUG
+#CFLAGS = -g -Wall -Wextra -std=gnu++98 -O2 $(INCDIRS) 
+CFLAGS = -g -Wall -Wextra -std=gnu++98 $(INCDIRS) -DDEBUG
 INCDIRS = 
 LIBDIRS = 
 LIBS = -lm
